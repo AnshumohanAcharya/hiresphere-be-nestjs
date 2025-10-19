@@ -1,0 +1,285 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Model
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String?  // Optional for OAuth users
+  firstName String?
+  lastName  String?
+  avatar    String?
+  phone     String?
+  isActive  Boolean  @default(true)
+  isVerified Boolean @default(false)
+  role      UserRole @default(CANDIDATE)
+  googleId  String?  @unique
+  githubId  String?  @unique
+  provider  AuthProvider @default(LOCAL)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  profile     UserProfile?
+  resumes     Resume[]
+  applications Application[]
+  skills      UserSkill[]
+
+  @@map("users")
+}
+
+// User Profile Model
+model UserProfile {
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  bio         String?
+  location    String?
+  website     String?
+  linkedin    String?
+  github      String?
+  experience  Int?    // years of experience
+  education   String?
+  availability String?
+  salaryExpectation Int?
+  preferredJobTypes  String[] // array of job types
+  workPreference     WorkPreference @default(REMOTE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+// User Skills Model
+model UserSkill {
+  id       String @id @default(cuid())
+  userId   String
+  skillId  String
+  level    SkillLevel @default(BEGINNER)
+  yearsOfExperience Int?
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, skillId])
+  @@map("user_skills")
+}
+
+// Skills Model
+model Skill {
+  id          String @id @default(cuid())
+  name        String @unique
+  category    String?
+  description String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  userSkills UserSkill[]
+  jobSkills  JobSkill[]
+
+  @@map("skills")
+}
+
+// Job Model
+model Job {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  company     String
+  location    String?
+  salaryMin   Int?
+  salaryMax   Int?
+  jobType     JobType
+  workMode    WorkMode @default(REMOTE)
+  experience  String?
+  requirements String?
+  benefits    String?
+  isActive    Boolean  @default(true)
+  postedBy    String   // user ID who posted the job
+  postedAt    DateTime @default(now())
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  skills       JobSkill[]
+  applications Application[]
+
+  @@map("jobs")
+}
+
+// Job Skills Model
+model JobSkill {
+  id       String @id @default(cuid())
+  jobId    String
+  skillId  String
+  required Boolean @default(true)
+  level    SkillLevel?
+
+  // Relations
+  job   Job   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, skillId])
+  @@map("job_skills")
+}
+
+// Application Model
+model Application {
+  id        String            @id @default(cuid())
+  userId    String
+  jobId     String
+  status    ApplicationStatus @default(PENDING)
+  coverLetter String?
+  resumeId  String?
+  appliedAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  // Relations
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job       Job        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resume    Resume?    @relation(fields: [resumeId], references: [id])
+  interview Interview?
+
+  @@unique([userId, jobId])
+  @@map("applications")
+}
+
+// Resume Model
+model Resume {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  content     String   // JSON string of resume data
+  filePath    String?  // path to uploaded file
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applications Application[]
+
+  @@map("resumes")
+}
+
+// Interview Model
+model Interview {
+  id          String        @id @default(cuid())
+  applicationId String      @unique
+  type        InterviewType
+  status      InterviewStatus @default(SCHEDULED)
+  scheduledAt DateTime?
+  duration    Int?          // in minutes
+  meetingLink String?
+  notes       String?
+  feedback    String?
+  score       Int?          // 1-10 rating
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("interviews")
+}
+
+// AI Interview Session Model
+model AiInterviewSession {
+  id          String   @id @default(cuid())
+  userId      String
+  jobId       String?
+  questions   String[] // array of questions
+  answers     String[] // array of answers
+  score       Int?     // overall score
+  feedback    String?
+  status      AiInterviewStatus @default(IN_PROGRESS)
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("ai_interview_sessions")
+}
+
+// Enums
+enum UserRole {
+  CANDIDATE
+  RECRUITER
+  ADMIN
+}
+
+enum WorkPreference {
+  REMOTE
+  ONSITE
+  HYBRID
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  FREELANCE
+}
+
+enum WorkMode {
+  REMOTE
+  ONSITE
+  HYBRID
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWED
+  SHORTLISTED
+  REJECTED
+  ACCEPTED
+}
+
+enum InterviewType {
+  PHONE
+  VIDEO
+  ONSITE
+  AI_INTERVIEW
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum AiInterviewStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+  GITHUB
+}
