@@ -1,6 +1,7 @@
 import { Field, ObjectType, ID } from '@nestjs/graphql';
 import { UserRole } from './user-role.enum';
 import { UserProfile } from './user-profile.dto';
+import { UserSkill } from '../../user/dto/user-skill.dto';
 
 @ObjectType()
 export class User {
@@ -37,11 +38,17 @@ export class User {
   @Field()
   isVerified: boolean;
 
+  @Field()
+  isOnboardingCompleted: boolean;
+
   @Field(() => UserRole)
   role: UserRole;
 
   @Field(() => UserProfile, { nullable: true })
   profile?: UserProfile | null;
+
+  @Field(() => [UserSkill], { nullable: true })
+  skills?: UserSkill[];
 
   @Field()
   createdAt: Date;

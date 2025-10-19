@@ -13,21 +13,22 @@ datasource db {
 
 // User Model
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String?  // Optional for OAuth users
-  firstName String?
-  lastName  String?
-  avatar    String?
-  phone     String?
-  isActive  Boolean  @default(true)
-  isVerified Boolean @default(false)
-  role      UserRole @default(CANDIDATE)
-  googleId  String?  @unique
-  githubId  String?  @unique
-  provider  AuthProvider @default(LOCAL)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  email                 String   @unique
+  password              String?  // Optional for OAuth users
+  firstName             String?
+  lastName              String?
+  avatar                String?
+  phone                 String?
+  isActive              Boolean  @default(true)
+  isVerified            Boolean  @default(false)
+  isOnboardingCompleted Boolean  @default(false)
+  role                  UserRole @default(CANDIDATE)
+  googleId              String?  @unique
+  githubId              String?  @unique
+  provider              AuthProvider @default(LOCAL)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   // Relations
   profile     UserProfile?

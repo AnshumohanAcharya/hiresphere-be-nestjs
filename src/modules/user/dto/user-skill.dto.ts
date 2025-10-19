@@ -17,7 +17,7 @@ export class UserSkill {
   level: SkillLevel;
 
   @Field(() => Int, { nullable: true })
-  yearsOfExperience?: number;
+  yearsOfExperience?: number | null;
 
   @Field(() => Skill)
   skill: Skill;

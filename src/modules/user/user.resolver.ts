@@ -59,4 +59,10 @@ export class UserResolver {
     await this.userService.removeUserSkill(context.req.user.id, skillId);
     return true;
   }
+
+  @Mutation(() => User)
+  @UseGuards(JwtAuthGuard)
+  async completeOnboarding(@Context() context) {
+    return this.userService.completeOnboarding(context.req.user.id);
+  }
 }

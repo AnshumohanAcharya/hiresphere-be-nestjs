@@ -8,11 +8,11 @@ export class Skill {
   @Field()
   name: string;
 
-  @Field({ nullable: true })
-  category?: string;
+  @Field(() => String, { nullable: true })
+  category?: string | null;
 
-  @Field({ nullable: true })
-  description?: string;
+  @Field(() => String, { nullable: true })
+  description?: string | null;
 
   @Field()
   createdAt: Date;
