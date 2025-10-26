@@ -1,10 +1,11 @@
-import { Resolver, Query, Mutation, Args, Context } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Context, Int } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from '../auth/dto/user.dto';
 import { UserProfile } from '../auth/dto/user-profile.dto';
 import { CreateUserProfileDto } from './dto/create-user-profile.dto';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Skill } from './dto/skill.dto';
 import { UserSkill } from './dto/user-skill.dto';
@@ -17,6 +18,12 @@ export class UserResolver {
   @UseGuards(JwtAuthGuard)
   async me(@Context() context) {
     return this.userService.getUserProfile(context.req.user.id);
+  }
+
+  @Mutation(() => User)
+  @UseGuards(JwtAuthGuard)
+  async updateUser(@Context() context, @Args('input') updateUserDto: UpdateUserDto) {
+    return this.userService.updateUser(context.req.user.id, updateUserDto);
   }
 
   @Mutation(() => UserProfile)
@@ -48,7 +55,7 @@ export class UserResolver {
     @Context() context,
     @Args('skillId') skillId: string,
     @Args('level') level: string,
-    @Args('yearsOfExperience', { nullable: true }) yearsOfExperience?: number,
+    @Args('yearsOfExperience', { type: () => Int, nullable: true }) yearsOfExperience?: number,
   ) {
     return this.userService.addUserSkill(context.req.user.id, skillId, level, yearsOfExperience);
   }

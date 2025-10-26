@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 import { CreateUserProfileDto } from './dto/create-user-profile.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserService {
@@ -25,6 +26,13 @@ export class UserService {
     }
 
     return user;
+  }
+
+  async updateUser(userId: string, updateUserDto: UpdateUserDto) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: updateUserDto,
+    });
   }
 
   async createUserProfile(userId: string, createProfileDto: CreateUserProfileDto) {

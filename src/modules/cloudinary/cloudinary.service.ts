@@ -59,11 +59,23 @@ export class CloudinaryService {
     resourceType: 'image' | 'video' | 'raw' | 'auto' = 'raw',
   ): Promise<UploadApiResponse> {
     try {
-      const result = await cloudinary.uploader.upload(base64String, {
+      const uploadOptions: any = {
         folder,
         resource_type: resourceType,
-        allowed_formats: ['pdf', 'doc', 'docx', 'txt'],
-      });
+      };
+
+      // Set allowed formats based on resource type
+      if (resourceType === 'image') {
+        uploadOptions.allowed_formats = ['jpg', 'jpeg', 'png', 'webp'];
+        uploadOptions.transformation = [
+          { width: 500, height: 500, crop: 'limit' },
+          { quality: 'auto' },
+        ];
+      } else if (resourceType === 'raw') {
+        uploadOptions.allowed_formats = ['pdf', 'doc', 'docx', 'txt'];
+      }
+
+      const result = await cloudinary.uploader.upload(base64String, uploadOptions);
       return result;
     } catch (error: any) {
       throw new BadRequestException(`File upload failed: ${error.message}`);
