@@ -10,8 +10,8 @@ export class OllamaService {
   private readonly httpClient: AxiosInstance;
 
   constructor(private configService: ConfigService) {
-    this.baseUrl = this.configService.get<string>('OLLAMA_BASE_URL') || 'http://localhost:11434';
-    this.model = this.configService.get<string>('OLLAMA_MODEL') || 'llama3:8b';
+    this.baseUrl = this.configService.get<string>('OLLAMA_BASE_URL') ?? 'http://localhost:11434';
+    this.model = this.configService.get<string>('OLLAMA_MODEL') ?? 'llama3:8b';
 
     this.httpClient = axios.create({
       baseURL: this.baseUrl,
@@ -316,15 +316,15 @@ Answer: ${answer}
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
         return {
-          score: Math.min(Math.max(parsed.score || 5, 0), 10),
-          feedback: parsed.feedback || 'No specific feedback provided.',
-          strengths: parsed.strengths || [],
-          weaknesses: parsed.weaknesses || [],
-          technicalDepth: Math.min(Math.max(parsed.technicalDepth || 0.5, 0), 1),
-          relevance: Math.min(Math.max(parsed.relevance || 0.5, 0), 1),
+          score: Math.min(Math.max(parsed.score ?? 5, 0), 10),
+          feedback: parsed.feedback ?? 'No specific feedback provided.',
+          strengths: parsed.strengths ?? [],
+          weaknesses: parsed.weaknesses ?? [],
+          technicalDepth: Math.min(Math.max(parsed.technicalDepth ?? 0.5, 0), 1),
+          relevance: Math.min(Math.max(parsed.relevance ?? 0.5, 0), 1),
         };
       }
-    } catch (error) {
+    } catch (_error) {
       this.logger.warn('Failed to parse JSON from analysis, using fallback');
     }
 
@@ -356,7 +356,7 @@ Answer: ${answer}
 }
 
 Interview Summary:
-- Role: ${sessionData.roleTitle || 'Software Engineer'}
+- Role: ${sessionData.roleTitle ?? 'Software Engineer'}
 - Total Questions: ${sessionData.questions.length}
 - Answers Provided: ${sessionData.answers.length}
 `;
@@ -395,17 +395,17 @@ Interview Summary:
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
         return {
-          overallScore: Math.min(Math.max(parsed.overallScore || 5, 0), 10),
-          technicalScore: Math.min(Math.max(parsed.technicalScore || 5, 0), 10),
-          communicationScore: Math.min(Math.max(parsed.communicationScore || 5, 0), 10),
-          detailedFeedback: parsed.detailedFeedback || 'Comprehensive analysis completed.',
-          strengths: parsed.strengths || [],
-          weaknesses: parsed.weaknesses || [],
-          improvementAreas: parsed.improvementAreas || [],
-          hiringRecommendation: parsed.hiringRecommendation || 'CONSIDER',
+          overallScore: Math.min(Math.max(parsed.overallScore ?? 5, 0), 10),
+          technicalScore: Math.min(Math.max(parsed.technicalScore ?? 5, 0), 10),
+          communicationScore: Math.min(Math.max(parsed.communicationScore ?? 5, 0), 10),
+          detailedFeedback: parsed.detailedFeedback ?? 'Comprehensive analysis completed.',
+          strengths: parsed.strengths ?? [],
+          weaknesses: parsed.weaknesses ?? [],
+          improvementAreas: parsed.improvementAreas ?? [],
+          hiringRecommendation: parsed.hiringRecommendation ?? 'CONSIDER',
         };
       }
-    } catch (error) {
+    } catch (_error) {
       this.logger.warn('Failed to parse comprehensive feedback JSON, using fallback');
     }
 
@@ -429,7 +429,7 @@ Interview Summary:
           requirements: Array.isArray(parsed.requirements) ? parsed.requirements : [],
         };
       }
-    } catch (error) {
+    } catch (_error) {
       this.logger.warn('Failed to parse job details JSON');
     }
 
@@ -442,7 +442,7 @@ Interview Summary:
 
   private getFallbackQuestions(roleTitle?: string): string[] {
     return [
-      `Tell me about yourself and your experience as a ${roleTitle || 'software engineer'}.`,
+      `Tell me about yourself and your experience as a ${roleTitle ?? 'software engineer'}.`,
       'What programming languages are you most comfortable with?',
       'Describe a challenging project you worked on and how you solved it.',
       'How do you approach debugging and problem-solving?',
@@ -500,7 +500,15 @@ Interview Summary:
       strengths: ['Completed all questions'],
       weaknesses: avgAnswerLength < 50 ? ['Brief answers'] : [],
       improvementAreas: ['Provide more detailed examples'],
-      hiringRecommendation: overallScore >= 7 ? 'HIRE' : overallScore >= 5 ? 'CONSIDER' : 'REJECT',
+      hiringRecommendation: (() => {
+        if (overallScore >= 7) {
+          return 'HIRE';
+        }
+        if (overallScore >= 5) {
+          return 'CONSIDER';
+        }
+        return 'REJECT';
+      })(),
     };
   }
 }

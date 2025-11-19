@@ -24,7 +24,7 @@ export class CheatingDetectionService {
   private readonly threshold: number;
 
   constructor(private prisma: PrismaService) {
-    this.threshold = parseFloat(process.env.CHEATING_THRESHOLD || '0.7');
+    this.threshold = parseFloat(process.env.CHEATING_THRESHOLD ?? '0.7');
   }
 
   /**
@@ -48,11 +48,11 @@ export class CheatingDetectionService {
 
     // 1. Multiple Faces Detection
     if (detectionData.multipleFaces || (detectionData.faceCount && detectionData.faceCount > 1)) {
-      const severity = Math.min((detectionData.faceCount || 2) / 5, 1);
+      const severity = Math.min((detectionData.faceCount ?? 2) / 5, 1);
       flags.push({
         type: CheatingFlagType.MULTIPLE_FACES,
         severity,
-        description: `Multiple faces detected (${detectionData.faceCount || 2} faces)`,
+        description: `Multiple faces detected (${detectionData.faceCount ?? 2} faces)`,
         evidence: { faceCount: detectionData.faceCount },
       });
       suspiciousActivities.push('Multiple faces detected in video feed');
@@ -63,7 +63,7 @@ export class CheatingDetectionService {
       detectionData.tabSwitches ||
       (detectionData.tabSwitchCount && detectionData.tabSwitchCount > 3)
     ) {
-      const switchCount = detectionData.tabSwitchCount || detectionData.tabSwitches || 0;
+      const switchCount = detectionData.tabSwitchCount ?? detectionData.tabSwitches ?? 0;
       const severity = Math.min(switchCount / 10, 1);
       flags.push({
         type: CheatingFlagType.TAB_SWITCHING,

@@ -22,10 +22,8 @@ export class AudioAuthGuard extends AuthGuard('jwt') {
     }
 
     // 2. Try cookie (access_token - check common cookie names)
-    if (!token) {
-      token =
-        request.cookies?.accessToken || request.cookies?.access_token || request.cookies?.token;
-    }
+    token ??=
+      request.cookies?.accessToken ?? request.cookies?.access_token ?? request.cookies?.token;
 
     // 3. Try query parameter (for audio elements)
     if (!token && request.query?.token) {
@@ -44,7 +42,7 @@ export class AudioAuthGuard extends AuthGuard('jwt') {
       // Attach user to request
       request.user = payload;
       return true;
-    } catch (error) {
+    } catch (_error) {
       throw new UnauthorizedException('Invalid or expired token');
     }
   }

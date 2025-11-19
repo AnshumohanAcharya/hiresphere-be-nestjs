@@ -47,21 +47,21 @@ export class ReportService {
 
       // Analyze each question-answer pair
       const questionAnalyses: QuestionAnalysis[] = [];
-      const questionTimings = (session.questionTimings as any) || {};
+      const questionTimings = (session.questionTimings as any) ?? {};
 
       for (let i = 0; i < session.questions.length; i++) {
-        const question = session.questions[i] || '';
-        const answer = session.answers[i] || '';
+        const question = session.questions[i] ?? '';
+        const answer = session.answers[i] ?? '';
 
         // Get timing data
-        const timing = questionTimings[i] || {};
-        const responseTime = timing.duration || 0;
+        const timing = questionTimings[i] ?? {};
+        const responseTime = timing.duration ?? 0;
 
         // Analyze answer using Ollama (only if answer exists)
         let analysis;
         if (answer) {
           analysis = await this.ollamaService.analyzeAnswer(question, answer, {
-            jobDescription: session.jobDescription || undefined,
+            jobDescription: session.jobDescription ?? undefined,
             previousAnswers: session.answers.slice(0, i),
           });
         } else {
@@ -77,14 +77,14 @@ export class ReportService {
         }
 
         questionAnalyses.push({
-          question: question || '',
-          answer: answer || '',
-          score: analysis.score || 0,
-          feedback: analysis.feedback || '',
-          strengths: analysis.strengths || [],
-          weaknesses: analysis.weaknesses || [],
-          technicalDepth: analysis.technicalDepth || 0,
-          relevance: analysis.relevance || 0,
+          question: question ?? '',
+          answer: answer ?? '',
+          score: analysis.score ?? 0,
+          feedback: analysis.feedback ?? '',
+          strengths: analysis.strengths ?? [],
+          weaknesses: analysis.weaknesses ?? [],
+          technicalDepth: analysis.technicalDepth ?? 0,
+          relevance: analysis.relevance ?? 0,
           responseTime,
         });
       }
@@ -93,8 +93,8 @@ export class ReportService {
       const comprehensiveFeedback = await this.ollamaService.generateComprehensiveFeedback({
         questions: session.questions,
         answers: session.answers,
-        jobDescription: session.jobDescription || undefined,
-        roleTitle: session.roleTitle || undefined,
+        jobDescription: session.jobDescription ?? undefined,
+        roleTitle: session.roleTitle ?? undefined,
         questionAnalyses: questionAnalyses.map((qa) => ({
           question: qa.question,
           answer: qa.answer,
@@ -110,28 +110,28 @@ export class ReportService {
       const report = await this.prisma.interviewReport.create({
         data: {
           sessionId,
-          overallScore: comprehensiveFeedback.overallScore || 0,
-          technicalScore: comprehensiveFeedback.technicalScore || null,
-          communicationScore: comprehensiveFeedback.communicationScore || null,
-          confidenceScore: metrics.confidenceLevel || null,
+          overallScore: comprehensiveFeedback.overallScore ?? 0,
+          technicalScore: comprehensiveFeedback.technicalScore ?? null,
+          communicationScore: comprehensiveFeedback.communicationScore ?? null,
+          confidenceScore: metrics.confidenceLevel ?? null,
           questionAnalyses: JSON.parse(JSON.stringify(questionAnalyses)),
-          strengths: comprehensiveFeedback.strengths || [],
-          weaknesses: comprehensiveFeedback.weaknesses || [],
-          improvementAreas: comprehensiveFeedback.improvementAreas || [],
-          averageResponseTime: metrics.averageResponseTime || null,
-          speechClarity: metrics.speechClarity || null,
-          pace: metrics.pace || null,
-          fillerWordsCount: metrics.fillerWordsCount || null,
-          technicalDepth: metrics.technicalDepth || null,
-          relevanceScore: metrics.relevanceScore || null,
-          accuracyScore: metrics.accuracyScore || null,
+          strengths: comprehensiveFeedback.strengths ?? [],
+          weaknesses: comprehensiveFeedback.weaknesses ?? [],
+          improvementAreas: comprehensiveFeedback.improvementAreas ?? [],
+          averageResponseTime: metrics.averageResponseTime ?? null,
+          speechClarity: metrics.speechClarity ?? null,
+          pace: metrics.pace ?? null,
+          fillerWordsCount: metrics.fillerWordsCount ?? null,
+          technicalDepth: metrics.technicalDepth ?? null,
+          relevanceScore: metrics.relevanceScore ?? null,
+          accuracyScore: metrics.accuracyScore ?? null,
           skillGaps: metrics.skillGaps ? JSON.parse(JSON.stringify(metrics.skillGaps)) : null,
-          requirementMatch: metrics.requirementMatch || null,
-          confidenceLevel: metrics.confidenceLevel || null,
-          engagementLevel: metrics.engagementLevel || null,
-          timeManagement: metrics.timeManagement || null,
-          hiringRecommendation: comprehensiveFeedback.hiringRecommendation || null,
-          detailedFeedback: comprehensiveFeedback.detailedFeedback || '',
+          requirementMatch: metrics.requirementMatch ?? null,
+          confidenceLevel: metrics.confidenceLevel ?? null,
+          engagementLevel: metrics.engagementLevel ?? null,
+          timeManagement: metrics.timeManagement ?? null,
+          hiringRecommendation: comprehensiveFeedback.hiringRecommendation ?? null,
+          detailedFeedback: comprehensiveFeedback.detailedFeedback ?? '',
           performanceChart: metrics.performanceChart
             ? JSON.parse(JSON.stringify(metrics.performanceChart))
             : null,

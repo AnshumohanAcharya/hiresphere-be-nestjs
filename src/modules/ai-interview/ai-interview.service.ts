@@ -65,8 +65,8 @@ export class AiInterviewService {
         const comprehensiveFeedback = await this.ollamaService.generateComprehensiveFeedback({
           questions: session.questions,
           answers: newAnswers,
-          jobDescription: session.jobDescription || undefined,
-          roleTitle: session.roleTitle || undefined,
+          jobDescription: session.jobDescription ?? undefined,
+          roleTitle: session.roleTitle ?? undefined,
         });
 
         await this.prisma.aiInterviewSession.update({
@@ -83,7 +83,7 @@ export class AiInterviewService {
           feedback: comprehensiveFeedback.detailedFeedback,
           isCompleted: true,
         };
-      } catch (error) {
+      } catch (_error) {
         // Fallback to basic feedback if Ollama fails
         const { score, feedback } = this.generateFeedback(session.questions, newAnswers);
 
@@ -186,7 +186,7 @@ export class AiInterviewService {
       );
 
       return questions.length > 0 ? questions : this.getFallbackQuestions();
-    } catch (error) {
+    } catch (_error) {
       // If Ollama fails, use fallback questions
       return this.getFallbackQuestions();
     }

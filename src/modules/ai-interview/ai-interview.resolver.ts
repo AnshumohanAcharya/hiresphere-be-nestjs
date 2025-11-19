@@ -110,6 +110,6 @@ export class AiInterviewResolver {
       return result.url;
     }
 
-    throw new Error(result.error || 'Failed to generate audio');
+    throw new Error(result.error ?? 'Failed to generate audio');
   }
 }

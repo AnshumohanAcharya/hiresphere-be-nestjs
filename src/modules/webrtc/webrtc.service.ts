@@ -9,7 +9,7 @@ export class WebRtcService {
 
   constructor(private configService: ConfigService) {
     const stunConfig =
-      this.configService.get<string>('WEBRTC_STUN_SERVERS') ||
+      this.configService.get<string>('WEBRTC_STUN_SERVERS') ??
       'stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302';
 
     this.stunServers = stunConfig.split(',').map((url) => ({
