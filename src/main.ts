@@ -1,5 +1,6 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { json, urlencoded } from 'express';
@@ -14,6 +15,9 @@ async function bootstrap() {
     bufferLogs: true,
     logger: WinstonModule.createLogger(createLogger()),
   });
+
+  // Configure WebSocket adapter for Socket.io
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   // --- Core Middlewares ---
   // Configure Helmet with CSP for GraphQL Playground

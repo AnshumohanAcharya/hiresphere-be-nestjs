@@ -15,6 +15,7 @@ import { OtpService } from './services/otp.service';
 import { SecurityService } from './services/security.service';
 import { OAuthService } from './services/oauth.service';
 import { EmailModule } from '../email/email.module';
+import { AudioAuthGuard } from './guards/audio-auth.guard';
 
 @Module({
   imports: [
@@ -44,7 +45,8 @@ import { EmailModule } from '../email/email.module';
     OtpService,
     SecurityService,
     OAuthService,
+    AudioAuthGuard,
   ],
-  exports: [AuthService, TokenService],
+  exports: [AuthService, TokenService, JwtModule, AudioAuthGuard],
 })
 export class AuthModule {}

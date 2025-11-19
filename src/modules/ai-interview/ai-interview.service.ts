@@ -2,10 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { StartAiInterviewDto } from './dto/start-ai-interview.dto';
 import { SubmitAnswerDto } from './dto/submit-answer.dto';
+import { OllamaService } from './services/ollama.service';
 
 @Injectable()
 export class AiInterviewService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private ollamaService: OllamaService,
+  ) {}
 
   async startInterview(userId: string, startInterviewDto: StartAiInterviewDto) {
     // Generate interview questions based on job requirements or general skills
@@ -56,20 +60,45 @@ export class AiInterviewService {
     });
 
     if (isLastQuestion) {
-      // Generate AI feedback and score
-      const { score, feedback } = this.generateFeedback(session.questions, newAnswers);
+      // Generate AI feedback and score using Ollama
+      try {
+        const comprehensiveFeedback = await this.ollamaService.generateComprehensiveFeedback({
+          questions: session.questions,
+          answers: newAnswers,
+          jobDescription: session.jobDescription || undefined,
+          roleTitle: session.roleTitle || undefined,
+        });
 
-      await this.prisma.aiInterviewSession.update({
-        where: { id: sessionId },
-        data: { score, feedback },
-      });
+        await this.prisma.aiInterviewSession.update({
+          where: { id: sessionId },
+          data: {
+            score: Math.round(comprehensiveFeedback.overallScore),
+            feedback: comprehensiveFeedback.detailedFeedback,
+          },
+        });
 
-      return {
-        ...updatedSession,
-        score,
-        feedback,
-        isCompleted: true,
-      };
+        return {
+          ...updatedSession,
+          score: Math.round(comprehensiveFeedback.overallScore),
+          feedback: comprehensiveFeedback.detailedFeedback,
+          isCompleted: true,
+        };
+      } catch (error) {
+        // Fallback to basic feedback if Ollama fails
+        const { score, feedback } = this.generateFeedback(session.questions, newAnswers);
+
+        await this.prisma.aiInterviewSession.update({
+          where: { id: sessionId },
+          data: { score, feedback },
+        });
+
+        return {
+          ...updatedSession,
+          score,
+          feedback,
+          isCompleted: true,
+        };
+      }
     }
 
     return {
@@ -104,12 +133,67 @@ export class AiInterviewService {
   }
 
   private async generateQuestions(jobId?: string): Promise<string[]> {
-    // This is a simplified version. In a real implementation, you would:
-    // 1. Analyze the job requirements
-    // 2. Use AI to generate relevant questions
-    // 3. Consider the candidate's skills and experience
+    try {
+      let jobDescription: string | undefined;
+      let roleTitle: string | undefined;
+      let difficulty: 'EASY' | 'MEDIUM' | 'HARD' = 'MEDIUM';
 
-    const generalQuestions = [
+      if (jobId) {
+        // Get job details for better question generation
+        const job = await this.prisma.job.findUnique({
+          where: { id: jobId },
+          include: {
+            skills: {
+              include: {
+                skill: true,
+              },
+            },
+          },
+        });
+
+        if (job) {
+          jobDescription = job.description;
+          roleTitle = job.title;
+
+          // Extract difficulty from job requirements
+          if (job.requirements) {
+            const reqLower = job.requirements.toLowerCase();
+            if (reqLower.includes('senior') || reqLower.includes('expert')) {
+              difficulty = 'HARD';
+            } else if (reqLower.includes('junior') || reqLower.includes('entry')) {
+              difficulty = 'EASY';
+            }
+          }
+
+          // Use Ollama to generate questions
+          const questions = await this.ollamaService.generateQuestions(
+            jobDescription,
+            roleTitle,
+            difficulty,
+          );
+
+          if (questions && questions.length > 0) {
+            return questions;
+          }
+        }
+      }
+
+      // Fallback: Generate general questions using Ollama
+      const questions = await this.ollamaService.generateQuestions(
+        undefined,
+        'Software Engineer',
+        'MEDIUM',
+      );
+
+      return questions.length > 0 ? questions : this.getFallbackQuestions();
+    } catch (error) {
+      // If Ollama fails, use fallback questions
+      return this.getFallbackQuestions();
+    }
+  }
+
+  private getFallbackQuestions(): string[] {
+    return [
       'Tell me about yourself and your experience in software development.',
       'What programming languages are you most comfortable with?',
       'Describe a challenging project you worked on and how you solved it.',
@@ -118,32 +202,7 @@ export class AiInterviewService {
       'How do you stay updated with new technologies and best practices?',
       'Describe a time when you had to learn a new technology quickly.',
       "What's your approach to writing clean, maintainable code?",
-      'How do you handle code reviews and feedback?',
-      'What are your career goals and how does this role fit into them?',
     ];
-
-    if (jobId) {
-      // Get job-specific questions based on job requirements
-      const job = await this.prisma.job.findUnique({
-        where: { id: jobId },
-        include: {
-          skills: {
-            include: {
-              skill: true,
-            },
-          },
-        },
-      });
-
-      if (job) {
-        const skillQuestions = job.skills.map(
-          (jobSkill) => `What's your experience with ${jobSkill.skill.name}?`,
-        );
-        return [...skillQuestions, ...generalQuestions.slice(0, 5)];
-      }
-    }
-
-    return generalQuestions.slice(0, 8);
   }
 
   private generateFeedback(

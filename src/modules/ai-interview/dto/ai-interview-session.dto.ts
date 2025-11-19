@@ -51,4 +51,44 @@ export class AiInterviewSession {
 
   @Field({ nullable: true })
   isCompleted?: boolean;
+
+  // Video/WebRTC fields
+  @Field({ nullable: true })
+  videoRecordingPath?: string;
+
+  @Field({ nullable: true })
+  audioRecordingPath?: string;
+
+  @Field({ nullable: true })
+  webrtcSessionId?: string;
+
+  @Field({ nullable: true })
+  signalingServerUrl?: string;
+
+  // Job Description fields
+  @Field({ nullable: true })
+  jobDescription?: string;
+
+  @Field({ nullable: true })
+  roleTitle?: string;
+
+  @Field({ nullable: true })
+  difficultyLevel?: string;
+
+  @Field(() => [String], { nullable: true })
+  extractedSkills?: string[];
+
+  // Cheating detection fields
+  @Field(() => Number, { nullable: true })
+  cheatingScore?: number;
+
+  @Field(() => [String], { nullable: true })
+  suspiciousActivities?: string[];
+
+  // Timing fields
+  @Field(() => String, { nullable: true })
+  questionTimings?: any; // JSON field
+
+  @Field(() => Int, { nullable: true })
+  totalDuration?: number;
 }

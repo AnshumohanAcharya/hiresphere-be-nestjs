@@ -213,6 +213,30 @@ model AiInterviewSession {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Video/WebRTC fields
+  videoRecordingPath    String?
+  audioRecordingPath    String?
+  webrtcSessionId       String?  @unique
+  signalingServerUrl    String?
+  
+  // Job Description fields
+  jobDescription        String?  // Full JD text
+  roleTitle             String?  // Role name
+  difficultyLevel       String?  // EASY, MEDIUM, HARD
+  extractedSkills       String[] // Skills extracted from JD
+  
+  // Cheating detection fields
+  cheatingFlags         CheatingFlag[]
+  cheatingScore         Float?   // 0-1, lower is better
+  suspiciousActivities  String[] // Array of detected activities
+  
+  // Report fields
+  report                InterviewReport?
+  
+  // Timing fields
+  questionTimings       Json?    // {questionIndex: {startTime, endTime, duration}}
+  totalDuration         Int?     // Total interview duration in seconds
+
   @@map("ai_interview_sessions")
 }
 
@@ -283,4 +307,85 @@ enum AuthProvider {
   LOCAL
   GOOGLE
   GITHUB
+}
+
+// Cheating Detection Flag Model
+model CheatingFlag {
+  id              String   @id @default(cuid())
+  sessionId       String
+  type            CheatingFlagType
+  severity        Float    // 0-1, severity of the flag
+  timestamp       DateTime
+  description     String
+  evidence        Json?    // Additional evidence data
+  
+  session         AiInterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  @@map("cheating_flags")
+}
+
+enum CheatingFlagType {
+  MULTIPLE_FACES
+  TAB_SWITCHING
+  CV_MISMATCH
+  EYE_MOVEMENT
+  AUDIO_ANOMALY
+  SCREEN_SHARING
+  BACKGROUND_NOISE
+  UNUSUAL_PATTERNS
+}
+
+// Interview Report Model
+model InterviewReport {
+  id                    String   @id @default(cuid())
+  sessionId             String   @unique
+  
+  // Overall metrics
+  overallScore          Float    // 0-10
+  technicalScore        Float?
+  communicationScore    Float?
+  confidenceScore       Float?
+  
+  // Per-question analysis
+  questionAnalyses      Json     // Array of per-question analysis
+  
+  // Strengths and weaknesses
+  strengths             String[]
+  weaknesses            String[]
+  improvementAreas      String[]
+  
+  // Communication metrics
+  averageResponseTime   Float?   // seconds
+  speechClarity         Float?   // 0-1
+  pace                  Float?   // words per minute
+  fillerWordsCount      Int?
+  
+  // Technical assessment
+  technicalDepth        Float?   // 0-1
+  relevanceScore        Float?   // 0-1
+  accuracyScore         Float?   // 0-1
+  
+  // Job requirement comparison
+  skillGaps             Json?    // {skill: {required: level, demonstrated: level, gap: level}}
+  requirementMatch      Float?   // 0-1, how well they match JD
+  
+  // Behavioral insights
+  confidenceLevel        Float?   // 0-1
+  engagementLevel       Float?   // 0-1
+  timeManagement        Float?   // 0-1
+  
+  // Recommendations
+  hiringRecommendation  String?  // STRONG_HIRE, HIRE, CONSIDER, REJECT
+  detailedFeedback      String   // Comprehensive text feedback
+  
+  // Visualizations data
+  performanceChart      Json?    // Data for charts
+  timelineData          Json?    // Timeline of interview
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  session               AiInterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  @@map("interview_reports")
 }

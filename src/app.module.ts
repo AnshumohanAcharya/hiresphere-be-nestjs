@@ -18,6 +18,10 @@ import { UserModule } from './modules/user/user.module';
 import { JobModule } from './modules/job/job.module';
 import { AiInterviewModule } from './modules/ai-interview/ai-interview.module';
 import { ResumeModule } from './modules/resume/resume.module';
+import { WebRtcModule } from './modules/webrtc/webrtc.module';
+import { CheatingDetectionModule } from './modules/cheating-detection/cheating-detection.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -56,8 +60,12 @@ import { ResumeModule } from './modules/resume/resume.module';
     JobModule,
     AiInterviewModule,
     ResumeModule,
+    WebRtcModule,
+    CheatingDetectionModule,
   ],
+  controllers: [AppController],
   providers: [
+    AppService,
     {
       provide: APP_GUARD,
       useClass: GraphqlThrottlerGuard,
