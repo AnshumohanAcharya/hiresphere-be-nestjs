@@ -112,4 +112,14 @@ export class AiInterviewResolver {
 
     throw new Error(result.error ?? 'Failed to generate audio');
   }
+
+  @Mutation(() => Boolean)
+  @UseGuards(JwtAuthGuard)
+  async deleteInterviewSession(@Context() context, @Args('sessionId') sessionId: string) {
+    const result = await this.aiInterviewService.deleteInterviewSession(
+      sessionId,
+      context.req.user.id,
+    );
+    return result.success;
+  }
 }

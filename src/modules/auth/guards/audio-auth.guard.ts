@@ -14,20 +14,31 @@ export class AudioAuthGuard extends AuthGuard('jwt') {
 
     // Try to extract token from multiple sources
     let token: string | null = null;
+    let tokenSource = 'none';
 
     // 1. Try Authorization header (Bearer token)
     const authHeader = request.headers.authorization;
     if (authHeader?.startsWith('Bearer ')) {
       token = authHeader.substring(7);
+      tokenSource = 'header';
     }
 
     // 2. Try cookie (access_token - check common cookie names)
-    token ??=
-      request.cookies?.accessToken ?? request.cookies?.access_token ?? request.cookies?.token;
+    if (!token) {
+      token =
+        request.cookies?.accessToken ??
+        request.cookies?.access_token ??
+        request.cookies?.token ??
+        null;
+      if (token) {
+        tokenSource = 'cookie';
+      }
+    }
 
-    // 3. Try query parameter (for audio elements)
+    // 3. Try query parameter (for audio elements) - decode if needed
     if (!token && request.query?.token) {
-      token = request.query.token;
+      token = decodeURIComponent(request.query.token);
+      tokenSource = 'query';
     }
 
     if (!token) {
@@ -42,7 +53,14 @@ export class AudioAuthGuard extends AuthGuard('jwt') {
       // Attach user to request
       request.user = payload;
       return true;
-    } catch (_error) {
+    } catch (error) {
+      // Log the error for debugging
+      console.error('Audio auth guard error:', {
+        error: error instanceof Error ? error.message : String(error),
+        tokenSource,
+        hasToken: !!token,
+        tokenLength: token?.length,
+      });
       throw new UnauthorizedException('Invalid or expired token');
     }
   }

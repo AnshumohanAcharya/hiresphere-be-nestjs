@@ -132,6 +132,25 @@ export class AiInterviewService {
     });
   }
 
+  async deleteInterviewSession(sessionId: string, userId: string) {
+    const session = await this.prisma.aiInterviewSession.findFirst({
+      where: {
+        id: sessionId,
+        userId,
+      },
+    });
+
+    if (!session) {
+      throw new NotFoundException('Interview session not found');
+    }
+
+    await this.prisma.aiInterviewSession.delete({
+      where: { id: sessionId },
+    });
+
+    return { success: true, message: 'Interview session deleted successfully' };
+  }
+
   private async generateQuestions(jobId?: string): Promise<string[]> {
     try {
       let jobDescription: string | undefined;

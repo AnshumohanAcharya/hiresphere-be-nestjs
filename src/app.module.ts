@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -40,19 +40,30 @@ import { AppService } from './app.service';
 
     CacheModule.registerAsync(redisConfig.asProvider()),
 
-    // Rate limiting configuration
-    ThrottlerModule.forRoot([
-      {
-        name: 'default',
-        ttl: 60000, // 1 minute
-        limit: 20, // 20 requests per minute (default for all endpoints)
+    // Rate limiting configuration - environment-aware
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const nodeEnv = configService.get<string>('NODE_ENV', 'development');
+        const isDevelopment = nodeEnv === 'development';
+
+        // Development: More lenient limits for easier testing
+        // Production: Stricter limits for security
+        return [
+          {
+            name: 'default',
+            ttl: 60000, // 1 minute
+            limit: isDevelopment ? 100 : 20, // 100 req/min in dev, 20 in prod
+          },
+          {
+            name: 'auth',
+            ttl: 300000, // 5 minutes
+            limit: isDevelopment ? 20 : 5, // 20 req/5min in dev, 5 in prod
+          },
+        ];
       },
-      {
-        name: 'auth',
-        ttl: 300000, // 5 minutes
-        limit: 5, // 5 requests per 5 minutes (for auth endpoints)
-      },
-    ]),
+    }),
 
     PrismaModule,
     AuthModule,
