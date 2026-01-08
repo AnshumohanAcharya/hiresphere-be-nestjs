@@ -1,0 +1,131 @@
+{
+  "name": "hire-sphere-backend",
+  "version": "0.0.1",
+  "description": "",
+  "author": "",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "nest build",
+    "format": "prettier --write \"{apps,libs}/**/*.ts\"",
+    "lint": "eslint \"{apps,libs}/**/*.ts\" --fix",
+    "check:circular": "madge --circular --extensions ts apps/api/src libs",
+    "check:graph": "madge --image graph.png --extensions ts apps/api/src",
+    "start:api": "nest start api --watch",
+    "start:scraper": "nest start scraper --watch",
+    "start:dev": "nest start api --watch",
+    "start:prod:api": "node dist/apps/api/main",
+    "start:prod:scraper": "node dist/apps/scraper/main",
+    "test": "jest --passWithNoTests",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:e2e": "jest --config ./apps/api/test/jest-e2e.json",
+    "test:all": "pnpm test && pnpm test:e2e",
+    "pre-commit": "pnpm exec lint-staged",
+    "pre-push": "pnpm test && pnpm build",
+    "prepare": "husky",
+    "prisma:generate": "prisma generate --schema=libs/database/src/schema.prisma",
+    "prisma:push": "prisma db push --schema=libs/database/src/schema.prisma"
+  },
+  "dependencies": {
+    "@nestjs/bullmq": "^11.0.4",
+    "@nestjs/common": "^11.1.11",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.1.11",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/passport": "^11.0.5",
+    "@nestjs/platform-express": "^11.1.11",
+    "@prisma/client": "^7.2.0",
+    "argon2": "^0.44.0",
+    "bullmq": "^5.66.4",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.3",
+    "ioredis": "^5.9.1",
+    "joi": "^18.0.2",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "passport-local": "^1.0.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.5",
+    "@babel/plugin-proposal-decorators": "^7.28.0",
+    "@babel/preset-typescript": "^7.28.5",
+    "@commitlint/cli": "^20.3.1",
+    "@commitlint/config-conventional": "^20.3.1",
+    "@eslint/eslintrc": "^3.3.3",
+    "@eslint/js": "^9.39.2",
+    "@nestjs/cli": "^11.0.14",
+    "@nestjs/schematics": "^11.0.9",
+    "@nestjs/testing": "^11.1.11",
+    "@trivago/prettier-plugin-sort-imports": "^6.0.2",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/express": "^5.0.6",
+    "@types/ioredis": "^5.0.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.19.3",
+    "@types/passport-jwt": "^4.0.1",
+    "@types/passport-local": "^1.0.38",
+    "@types/supertest": "^6.0.3",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "globals": "^16.5.0",
+    "husky": "^9.1.7",
+    "jest": "^30.2.0",
+    "lint-staged": "^16.2.7",
+    "madge": "^8.0.0",
+    "prettier": "^3.7.4",
+    "prisma": "^7.2.0",
+    "source-map-support": "^0.5.21",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.6",
+    "ts-loader": "^9.5.4",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.52.0"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": ".",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.(t|j)s",
+      "!**/node_modules/**",
+      "!**/dist/**",
+      "!**/*.module.ts",
+      "!**/*.dto.ts",
+      "!**/*.strategy.ts",
+      "!**/main.ts",
+      "!**/index.ts"
+    ],
+    "coverageDirectory": "./coverage",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/apps/",
+      "<rootDir>/libs/"
+    ],
+    "moduleNameMapper": {
+      "^@app/ai-bridge(|/.*)$": "<rootDir>/libs/ai-bridge/src/$1",
+      "^@app/contracts(|/.*)$": "<rootDir>/libs/contracts/src/$1",
+      "^@app/database(|/.*)$": "<rootDir>/libs/database/src/$1"
+    }
+  },
+  "lint-staged": {
+    "**/*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  }
+}

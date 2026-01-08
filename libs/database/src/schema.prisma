@@ -1,0 +1,181 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/.prisma/client" 
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================
+// 1. ONBOARDING & PROFILE MODULE
+// ==========================================
+
+enum OnboardingStatus {
+  AWAITING_PROFILE
+  AWAITING_RESUME
+  COMPLETED
+}
+
+model User {
+  id               String           @id @default(uuid())
+  email            String           @unique
+  name             String?
+  password         String
+  onboardingStep   OnboardingStatus @default(AWAITING_PROFILE)
+  
+  // Profile & Preferences
+  targetRoles      String[]         // e.g. ["Fullstack Developer", "Backend Engineer"]
+  targetLocations  String[]
+  minSalary        Int?
+  preferredStack   String[]         // e.g. ["Node.js", "Python", "AWS"]
+  
+  // Relations
+  resumes          Resume[]
+  jobs             JobApplication[]
+  interviews       InterviewSession[]
+  outreachCampaigns OutreachCampaign[]
+  
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+// ==========================================
+// 2. JOB AGGREGATOR MODULE
+// ==========================================
+
+model Job {
+  id              String   @id @default(uuid())
+  externalId      String   @unique // ID from LinkedIn/Indeed/Glassdoor
+  source          String   // e.g. "LINKEDIN"
+  title           String
+  companyName     String
+  location        String?
+  description     String   @db.Text
+  salaryRaw       String?
+  url             String
+  
+  // Scraper Metadata
+  isProcessed     Boolean  @default(false)
+  relevanceScore  Float?   // Calculated by Python AI service
+  
+  applications    JobApplication[]
+  createdAt       DateTime @default(now())
+}
+
+// ==========================================
+// 3. RESUME & COVER LETTER MODULE
+// ==========================================
+
+model Resume {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  
+  name         String   // e.g., "Software Engineer v1"
+  isMaster     Boolean  @default(false)
+  content      Json     // The structured resume data
+  fileUrl      String?  // S3 link to the PDF
+  
+  tailoredDocs TailoredDocument[]
+  createdAt    DateTime @default(now())
+}
+
+model TailoredDocument {
+  id             String   @id @default(uuid())
+  resumeId       String
+  resume         Resume   @relation(fields: [resumeId], references: [id])
+  jobId          String
+  
+  docType        String   // "RESUME" or "COVER_LETTER"
+  tailoredContent Json
+  matchScore     Int
+  pdfUrl         String?
+  
+  createdAt      DateTime @default(now())
+}
+
+// ==========================================
+// 4. COLD OUTREACH MODULE
+// ==========================================
+
+enum OutreachStatus {
+  PENDING
+  SCHEDULED
+  SENT
+  REPLIED
+  STOPPED
+}
+
+model OutreachCampaign {
+  id        String         @id @default(uuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id])
+  jobId     String
+  
+  status    OutreachStatus @default(PENDING)
+  recruiterName  String?
+  recruiterEmail String?
+  
+  // Sequence Logic
+  sequenceStep   Int       @default(1)
+  nextRunAt      DateTime?
+  
+  logs      OutreachLog[]
+  createdAt DateTime       @default(now())
+}
+
+model OutreachLog {
+  id          String   @id @default(uuid())
+  campaignId  String
+  campaign    OutreachCampaign @relation(fields: [campaignId], references: [id])
+  
+  messageType String   // "EMAIL" or "LINKEDIN"
+  content     String   @db.Text
+  sentAt      DateTime @default(now())
+}
+
+// ==========================================
+// 5. INTERVIEW SIMULATOR MODULE
+// ==========================================
+
+model InterviewSession {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  
+  jobTitle     String
+  difficulty   String   @default("INTERMEDIATE")
+  
+  // Real-time Data
+  transcript   Json     // Array of {role: "interviewer", text: "..."}
+  audioRecord  String?  // URL to recording in S3
+  
+  // AI Feedback
+  feedback     Json?    // Summary, strengths, and weaknesses
+  finalScore   Int?
+  
+  createdAt    DateTime @default(now())
+}
+
+// ==========================================
+// 6. TRACKING / ANALYTICS
+// ==========================================
+
+model JobApplication {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id])
+  
+  status    String   @default("DISCOVERED") // DISCOVERED, APPLIED, INTERVIEWING, OFFER, REJECTED
+  appliedAt DateTime?
+  createdAt DateTime @default(now())
+}

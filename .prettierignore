@@ -1,0 +1,16 @@
+# Artifacts
+dist
+node_modules
+coverage
+
+# Prisma
+# Do not format the generated client as it is huge
+node_modules/.prisma
+
+# Lockfiles
+pnpm-lock.yaml
+
+# Assets
+*.md
+generated
+prisma
