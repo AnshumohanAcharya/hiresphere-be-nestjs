@@ -1,5 +1,5 @@
+import 'dotenv/config';
 import cookieParser from 'cookie-parser';
-
 import { ValidationPipe } from '@nestjs/common';
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 

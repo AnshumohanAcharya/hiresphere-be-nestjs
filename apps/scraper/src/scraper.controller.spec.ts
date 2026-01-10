@@ -1,23 +1,34 @@
 import { Test, TestingModule } from '@nestjs/testing';
-
 import { ScraperController } from './scraper.controller';
-import { ScraperService } from './scraper.service';
+import { QueueService } from '@app/queue';
 
 describe('ScraperController', () => {
-  let scraperController: ScraperController;
+  let controller: ScraperController;
+  let queueService: QueueService;
 
   beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await Test.createTestingModule({
       controllers: [ScraperController],
-      providers: [ScraperService],
+      providers: [
+        {
+          provide: QueueService,
+          useValue: {
+            addJobSyncTask: jest.fn().mockResolvedValue({ id: 'job-123' }),
+          },
+        },
+      ],
     }).compile();
 
-    scraperController = app.get<ScraperController>(ScraperController);
+    controller = module.get<ScraperController>(ScraperController);
+    queueService = module.get<QueueService>(QueueService);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(scraperController.getHello()).toBe('Hello World!');
-    });
+  it('should trigger a sync and return a success message', async () => {
+    const spy = jest.spyOn(queueService, 'addJobSyncTask');
+
+    const result = await controller.triggerSync();
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ message: 'Sync task queued successfully' });
   });
 });

@@ -3,9 +3,9 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "target": "ES2023",
-    "strict": true, // Enable all strict type-checking
-    "noImplicitAny": true, // Ensure no "hidden" any types
-    "strictPropertyInitialization": false, // Often necessary for NestJS decorators
+    "strict": true,
+    "noImplicitAny": true,
+    "strictPropertyInitialization": false,
     "resolvePackageJsonExports": true,
     "esModuleInterop": true,
     "isolatedModules": true,
@@ -24,12 +24,30 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@app/ai-bridge": ["libs/ai-bridge/src"],
-      "@app/ai-bridge/*": ["libs/ai-bridge/src/*"],
-      "@app/contracts": ["libs/contracts/src"],
-      "@app/contracts/*": ["libs/contracts/src/*"],
-      "@app/database": ["libs/database/src"],
-      "@app/database/*": ["libs/database/src/*"]
+      "@app/ai-bridge": [
+        "libs/ai-bridge/src"
+      ],
+      "@app/ai-bridge/*": [
+        "libs/ai-bridge/src/*"
+      ],
+      "@app/contracts": [
+        "libs/contracts/src"
+      ],
+      "@app/contracts/*": [
+        "libs/contracts/src/*"
+      ],
+      "@app/database": [
+        "libs/database/src"
+      ],
+      "@app/database/*": [
+        "libs/database/src/*"
+      ],
+      "@app/queue": [
+        "libs/queue/src"
+      ],
+      "@app/queue/*": [
+        "libs/queue/src/*"
+      ]
     }
   }
 }
