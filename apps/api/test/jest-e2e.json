@@ -1,14 +1,19 @@
 {
-  "moduleFileExtensions": ["js", "json", "ts"],
-  "rootDir": ".",
+  "preset": "ts-jest",
   "testEnvironment": "node",
-  "testRegex": ".e2e-spec.ts$",
+  "rootDir": "../../../",
+  "testMatch": ["<rootDir>/apps/api/test/**/*.e2e-spec.ts"],
+  "moduleFileExtensions": ["ts", "js", "json"],
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "tsconfig": "<rootDir>/apps/api/tsconfig.app.json"
+      }
+    ]
   },
   "moduleNameMapper": {
-    "^@app/database(|/.*)$": "<rootDir>/../../../libs/database/src/$1",
-    "^@app/contracts(|/.*)$": "<rootDir>/../../../libs/contracts/src/$1",
-    "^@app/ai-bridge(|/.*)$": "<rootDir>/../../../libs/ai-bridge/src/$1"
+    "^@app/([^/]+)/(.*)$": "<rootDir>/libs/$1/src/$2",
+    "^@app/([^/]+)$": "<rootDir>/libs/$1/src"
   }
 }

@@ -24,6 +24,7 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
+      "@app/*": ["libs/*/src"],
       "@app/ai-bridge": [
         "libs/ai-bridge/src"
       ],

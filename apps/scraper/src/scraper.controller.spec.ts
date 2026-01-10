@@ -29,6 +29,9 @@ describe('ScraperController', () => {
     const result = await controller.triggerSync();
 
     expect(spy).toHaveBeenCalledTimes(1);
-    expect(result).toEqual({ message: 'Sync task queued successfully' });
+    expect(result).toEqual({
+      message: 'Global job synchronization task has been queued.',
+      status: 'success',
+    });
   });
 });
