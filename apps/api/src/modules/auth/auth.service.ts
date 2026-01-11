@@ -1,17 +1,19 @@
-import { Injectable, ConflictException, InternalServerErrorException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
+import { LoginDto, RegisterDto } from '@app/contracts';
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as argon2 from 'argon2';
-import { Response } from 'express';
 import { UsersService } from '../users/users.service';
-import { RegisterDto } from '@app/contracts'; // Using path alias
+import { AuthHelpers } from './helpers';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
-    private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
+    private readonly authHelper: AuthHelpers,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -34,28 +36,44 @@ export class AuthService {
     }
   }
 
-  async login(user: any, response: Response) {
-    const payload = { sub: user.id, email: user.email };
+  async login(dto: LoginDto) {
+    // Use the explicit Auth method
+    const user = await this.usersService.findByEmail(dto.email);
+    if (!user) throw new ConflictException('Invalid credentials');
 
-    // Use separate secrets for Access and Refresh tokens
-    const accessToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-      expiresIn: '15m',
-    });
+    const isPasswordValid = await argon2.verify(user.password, dto.password);
+    if (!isPasswordValid) throw new ConflictException('Invalid credentials');
 
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-      expiresIn: '7d',
-    });
+    const tokens = await this.authHelper.generateTokens(user.id, user.email);
+    await this.authHelper.updateRefreshTokenHash(user.id, tokens.refreshToken);
 
-    response.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: this.configService.get<string>('NODE_ENV') === 'production',
-      sameSite: 'strict',
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    return tokens;
+  }
 
-    return { access_token: accessToken };
+  async refresh(userId: string, refreshToken: string) {
+    // Use the explicit Auth method
+    const user = await this.usersService.findByIdWithAuth(userId);
+
+    if (!user || !user.refreshTokenHash) {
+      throw new UnauthorizedException('Access Denied');
+    }
+
+    const isTokenMatching = await argon2.verify(user.refreshTokenHash, refreshToken);
+
+    if (!isTokenMatching) {
+      // REUSE DETECTION: If token doesn't match, clear all sessions
+      await this.logout(userId);
+      throw new UnauthorizedException('Security Alert: Potential token reuse detected.');
+    }
+
+    const tokens = await this.authHelper.generateTokens(user.id, user.email);
+    await this.authHelper.updateRefreshTokenHash(user.id, tokens.refreshToken);
+
+    return tokens;
+  }
+
+  async logout(userId: string) {
+    // Clear the hash from DB so the refresh token can never be used again
+    await this.usersService.update(userId, { refreshTokenHash: null });
   }
 }

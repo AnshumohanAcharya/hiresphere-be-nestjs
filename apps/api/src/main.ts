@@ -38,6 +38,9 @@ async function bootstrap() {
     credentials: true,
   });
 
+  // Use /api for server routes
+  app.setGlobalPrefix('api');
+
   await app.listen(3001);
 }
 
