@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
@@ -11,6 +12,8 @@ import { AuthHelpers } from './helpers';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly usersService: UsersService,
     private readonly authHelper: AuthHelpers,
@@ -24,25 +27,22 @@ export class AuthService {
     try {
       return await this.usersService.create(dto, hashedPassword);
     } catch (error: unknown) {
-      // Industrial Standard: Use a type guard for Prisma Errors
       if (error instanceof Error && 'code' in error) {
         const prismaError = error as { code: string };
         if (prismaError.code === 'P2002') {
           throw new ConflictException('Email already exists');
         }
       }
-
       throw new InternalServerErrorException('Registration failed');
     }
   }
 
   async login(dto: LoginDto) {
-    // Use the explicit Auth method
     const user = await this.usersService.findByEmail(dto.email);
-    if (!user) throw new ConflictException('Invalid credentials');
+    if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const isPasswordValid = await argon2.verify(user.password, dto.password);
-    if (!isPasswordValid) throw new ConflictException('Invalid credentials');
+    if (!isPasswordValid) throw new UnauthorizedException('Invalid credentials');
 
     const tokens = await this.authHelper.generateTokens(user.id, user.email);
     await this.authHelper.updateRefreshTokenHash(user.id, tokens.refreshToken);
@@ -51,7 +51,6 @@ export class AuthService {
   }
 
   async refresh(userId: string, refreshToken: string) {
-    // Use the explicit Auth method
     const user = await this.usersService.findByIdWithAuth(userId);
 
     if (!user || !user.refreshTokenHash) {
@@ -61,9 +60,9 @@ export class AuthService {
     const isTokenMatching = await argon2.verify(user.refreshTokenHash, refreshToken);
 
     if (!isTokenMatching) {
-      // REUSE DETECTION: If token doesn't match, clear all sessions
+      this.logger.warn(`Refresh token reuse detected for user ${userId}. Revoking all sessions.`);
       await this.logout(userId);
-      throw new UnauthorizedException('Security Alert: Potential token reuse detected.');
+      throw new UnauthorizedException('Access Denied');
     }
 
     const tokens = await this.authHelper.generateTokens(user.id, user.email);
@@ -73,7 +72,6 @@ export class AuthService {
   }
 
   async logout(userId: string) {
-    // Clear the hash from DB so the refresh token can never be used again
-    await this.usersService.update(userId, { refreshTokenHash: null });
+    await this.usersService.updateRefreshTokenHash(userId, null);
   }
 }

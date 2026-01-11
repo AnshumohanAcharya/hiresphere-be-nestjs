@@ -5,6 +5,12 @@ import { Injectable } from '@nestjs/common';
 import { OnboardingStatus, User } from '@prisma/client';
 
 export type SafeUser = Omit<User, 'password' | 'refreshTokenHash'>;
+export type UpdateUserPayload = Partial<
+  Pick<
+    User,
+    'firstName' | 'lastName' | 'targetRoles' | 'targetLocations' | 'minSalary' | 'preferredStack'
+  >
+>;
 
 @Injectable()
 export class UsersService {
@@ -71,10 +77,17 @@ export class UsersService {
     });
   }
 
-  async update(id: string, data: Partial<User>) {
+  async update(id: string, data: UpdateUserPayload) {
     return this.db.user.update({
       where: { id },
       data,
+    });
+  }
+
+  async updateRefreshTokenHash(id: string, refreshTokenHash: string | null) {
+    return this.db.user.update({
+      where: { id },
+      data: { refreshTokenHash },
     });
   }
 }
