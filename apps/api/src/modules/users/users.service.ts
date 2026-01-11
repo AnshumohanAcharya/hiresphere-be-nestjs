@@ -4,6 +4,14 @@ import { DatabaseService } from '@app/database';
 import { Injectable } from '@nestjs/common';
 import { OnboardingStatus, User } from '@prisma/client';
 
+export type SafeUser = Omit<User, 'password' | 'refreshTokenHash'>;
+export type UpdateUserPayload = Partial<
+  Pick<
+    User,
+    'firstName' | 'lastName' | 'targetRoles' | 'targetLocations' | 'minSalary' | 'preferredStack'
+  >
+>;
+
 @Injectable()
 export class UsersService {
   constructor(private readonly db: DatabaseService) {}
@@ -12,7 +20,8 @@ export class UsersService {
     const user = await this.db.user.create({
       data: {
         email: dto.email,
-        name: dto.name,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
         password: hashedPassword,
       },
     });
@@ -28,15 +37,29 @@ export class UsersService {
     });
   }
 
-  async findById(id: string): Promise<Omit<User, 'password'> | null> {
-    const user = await this.db.user.findUnique({
+  async findByIdWithAuth(id: string): Promise<User | null> {
+    return this.db.user.findUnique({
       where: { id },
     });
+  }
 
-    if (!user) return null;
-
-    const { password: _password, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+  async findById(id: string): Promise<SafeUser | null> {
+    return this.db.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        onboardingStep: true,
+        targetRoles: true,
+        targetLocations: true,
+        minSalary: true,
+        preferredStack: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
   }
 
   async completeOnboarding(userId: string, dto: OnboardingDto) {
@@ -51,6 +74,20 @@ export class UsersService {
         email: true,
         onboardingStep: true,
       },
+    });
+  }
+
+  async update(id: string, data: UpdateUserPayload) {
+    return this.db.user.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async updateRefreshTokenHash(id: string, refreshTokenHash: string | null) {
+    return this.db.user.update({
+      where: { id },
+      data: { refreshTokenHash },
     });
   }
 }

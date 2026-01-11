@@ -26,9 +26,11 @@ enum OnboardingStatus {
 model User {
   id             String           @id @default(uuid())
   email          String           @unique
-  name           String?
+  firstName      String
+  lastName       String
   password       String
   onboardingStep OnboardingStatus @default(AWAITING_PROFILE)
+  refreshTokenHash  String?
 
   // Profile & Preferences
   targetRoles     String[] // e.g. ["Fullstack Developer", "Backend Engineer"]
